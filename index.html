@@ -161,125 +161,123 @@ If you use nginx, you should set protection headers in the proxy configuration.<
 <li>Use HTTPS not only for login and register pages, but for the whole site. Your session will be stolen if you use HTTP for the other pages.</li>
 <li>Do not send a plain-text password to the user's email as a reminder.</li>
 <li>If application is generating password on the user's behalf, force the user to change it immediately the first time user logs in.</li>
-<li>Insert delays in login system. You can block ip after some failed attempts, but use it carefully. Also you can secure app against parallel checks.
-<code>
-var maxFailedCount = 5; // Max tries
-var forgetFailedMins = 15; // time the user will be blocked
-var blockList = {};
-// Check if ip is still allowed
-function isAllowed(ip) {
-   return !blockList[ip] || blockList[ip].count &lt; maxFailedCount;
+<li>
+<p>Insert delays in login system. You can block ip after some failed attempts, but use it carefully. Also you can secure app against parallel checks.</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> maxFailedCount <span class="pl-k">=</span> <span class="pl-c1">5</span>; <span class="pl-c">// Max tries</span>
+<span class="pl-k">var</span> forgetFailedMins <span class="pl-k">=</span> <span class="pl-c1">15</span>; <span class="pl-c">// time the user will be blocked</span>
+<span class="pl-k">var</span> blockList <span class="pl-k">=</span> {};
+<span class="pl-c">// Check if ip is still allowed</span>
+<span class="pl-k">function</span> <span class="pl-en">isAllowed</span>(<span class="pl-smi">ip</span>) {
+   <span class="pl-k">return</span> <span class="pl-k">!</span>blockList[ip] <span class="pl-k">||</span> blockList[ip].<span class="pl-smi">count</span> <span class="pl-k">&lt;</span> maxFailedCount;
 }
-// Remove ip from blockList
-function successfulAttempt(ip) {
-   if(blockList[ip]) {
-       if(blockList[ip].timeout) {
-           clearTimeout(blockList[ip].timeout);
+<span class="pl-c">// Remove ip from blockList</span>
+<span class="pl-k">function</span> <span class="pl-en">successfulAttempt</span>(<span class="pl-smi">ip</span>) {
+   <span class="pl-k">if</span>(blockList[ip]) {
+       <span class="pl-k">if</span>(blockList[ip].<span class="pl-smi">timeout</span>) {
+           <span class="pl-c1">clearTimeout</span>(blockList[ip].<span class="pl-smi">timeout</span>);
        }
-       delete blockList[ip];
+       <span class="pl-k">delete</span> blockList[ip];
    }
 }
-// Increment blocklist counter
-function failedAttempt(ip) {
-   if(!blockList[ip]) {
-       blockList[ip] = {
-           count: 0
+<span class="pl-c">// Increment blocklist counter</span>
+<span class="pl-k">function</span> <span class="pl-en">failedAttempt</span>(<span class="pl-smi">ip</span>) {
+   <span class="pl-k">if</span>(<span class="pl-k">!</span>blockList[ip]) {
+       blockList[ip] <span class="pl-k">=</span> {
+           count<span class="pl-k">:</span> <span class="pl-c1">0</span>
        };
    }
-   blockList[ip].count++;
-   if(blockList[ip].timeout) {
-       clearTimeout(blockList[ip].timeout);
+   blockList[ip].<span class="pl-smi">count</span><span class="pl-k">++</span>;
+   <span class="pl-k">if</span>(blockList[ip].<span class="pl-smi">timeout</span>) {
+       <span class="pl-c1">clearTimeout</span>(blockList[ip].<span class="pl-smi">timeout</span>);
    }
-   blockList[ip].timeout = setTimeout(function () {
-       delete blockList[ip];
-   }, forgetFailedMins * 60 * 1000);
+   blockList[ip].<span class="pl-smi">timeout</span> <span class="pl-k">=</span> <span class="pl-c1">setTimeout</span>(<span class="pl-k">function</span> () {
+       <span class="pl-k">delete</span> blockList[ip];
+   }, forgetFailedMins <span class="pl-k">*</span> <span class="pl-c1">60</span> <span class="pl-k">*</span> <span class="pl-c1">1000</span>);
 }
-app.post('/login', function (req, res, next) {
-   if(!isAllowed(req.ip)) { // Check if user is blocked
-       req.session.error = 'You have been blocked for ' +
-           forgetFailedMins + ' minutes';
-       res.redirect('/');
-       return;
+<span class="pl-smi">app</span>.<span class="pl-en">post</span>(<span class="pl-s"><span class="pl-pds">'</span>/login<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+   <span class="pl-k">if</span>(<span class="pl-k">!</span><span class="pl-en">isAllowed</span>(<span class="pl-smi">req</span>.<span class="pl-smi">ip</span>)) { <span class="pl-c">// Check if user is blocked</span>
+       <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">error</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>You have been blocked for <span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+           forgetFailedMins <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> minutes<span class="pl-pds">'</span></span>;
+       <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>);
+       <span class="pl-k">return</span>;
    }
-   validateUser(req.body, function(err, valid) {
-       if(err) {
-           next(err);
-           return;
+   <span class="pl-en">validateUser</span>(<span class="pl-smi">req</span>.<span class="pl-c1">body</span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">valid</span>) {
+       <span class="pl-k">if</span>(err) {
+           <span class="pl-en">next</span>(err);
+           <span class="pl-k">return</span>;
        }
-       if(valid.success) { // Validation success. Create authorized session.
-           successfulAttempt(req.ip); // Clear from blocklist
-           req.session.login({userId: valid.userId}, function () {
-               res.redirect('/user/' + valid.userId);
+       <span class="pl-k">if</span>(<span class="pl-smi">valid</span>.<span class="pl-smi">success</span>) { <span class="pl-c">// Validation success. Create authorized session.</span>
+           <span class="pl-en">successfulAttempt</span>(<span class="pl-smi">req</span>.<span class="pl-smi">ip</span>); <span class="pl-c">// Clear from blocklist</span>
+           <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">login</span>({userId<span class="pl-k">:</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>}, <span class="pl-k">function</span> () {
+               <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(<span class="pl-s"><span class="pl-pds">'</span>/user/<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>);
            });
-       } else {
-           failedAttempt(req.ip); // Register the failed attempt
-           req.session.error = valid.error;
-           res.redirect('/');
+       } <span class="pl-k">else</span> {
+           <span class="pl-en">failedAttempt</span>(<span class="pl-smi">req</span>.<span class="pl-smi">ip</span>); <span class="pl-c">// Register the failed attempt</span>
+           <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">error</span> <span class="pl-k">=</span> <span class="pl-smi">valid</span>.<span class="pl-smi">error</span>;
+           <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>);
        }
    });
-});
-</code>
-<code>
-app.post('/login', function (req, res, next) {
-    function end(url) {
-        setTimeout(function () {
-            res.redirect(url);
-        }, 1000);
+});</pre></div>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">app</span>.<span class="pl-en">post</span>(<span class="pl-s"><span class="pl-pds">'</span>/login<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">function</span> <span class="pl-en">end</span>(<span class="pl-smi">url</span>) {
+        <span class="pl-c1">setTimeout</span>(<span class="pl-k">function</span> () {
+            <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(url);
+        }, <span class="pl-c1">1000</span>);
     }
-    validateUser(req.body, function(err, valid) {
-        if(err) {
-            next(err);
-            return;
+    <span class="pl-en">validateUser</span>(<span class="pl-smi">req</span>.<span class="pl-c1">body</span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">valid</span>) {
+        <span class="pl-k">if</span>(err) {
+            <span class="pl-en">next</span>(err);
+            <span class="pl-k">return</span>;
         }
-        if(valid.success) { // Validation success. Create authorized session.
-            req.session.login({userId: valid.userId}, function () {
-                // delay before answer
-                end('/user/' + valid.userId);
+        <span class="pl-k">if</span>(<span class="pl-smi">valid</span>.<span class="pl-smi">success</span>) { <span class="pl-c">// Validation success. Create authorized session.</span>
+            <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">login</span>({userId<span class="pl-k">:</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>}, <span class="pl-k">function</span> () {
+                <span class="pl-c">// delay before answer</span>
+                <span class="pl-en">end</span>(<span class="pl-s"><span class="pl-pds">'</span>/user/<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>);
             });
-        } else {
-            req.session.error = valid.error;
-            // delay before answering
-            end('/');
+        } <span class="pl-k">else</span> {
+            <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">error</span> <span class="pl-k">=</span> <span class="pl-smi">valid</span>.<span class="pl-smi">error</span>;
+            <span class="pl-c">// delay before answering</span>
+            <span class="pl-en">end</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>);
         }
     });
-});
-</code>
-<code>
-var inProgress = {};
-app.post('/login', function (req, res, next) {
-    var key = req.ip + ':' + req.body.username;
-    // check if we are already authenticating this user from the given IP
-    if(inProgress[key]) {
-        req.session.error = 'Authentication already in progress';
-        res.redirect('/');
-        return;
+});</pre></div>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> inProgress <span class="pl-k">=</span> {};
+<span class="pl-smi">app</span>.<span class="pl-en">post</span>(<span class="pl-s"><span class="pl-pds">'</span>/login<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">var</span> key <span class="pl-k">=</span> <span class="pl-smi">req</span>.<span class="pl-smi">ip</span> <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>:<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">req</span>.<span class="pl-c1">body</span>.<span class="pl-smi">username</span>;
+    <span class="pl-c">// check if we are already authenticating this user from the given IP</span>
+    <span class="pl-k">if</span>(inProgress[key]) {
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">error</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>Authentication already in progress<span class="pl-pds">'</span></span>;
+        <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>);
+        <span class="pl-k">return</span>;
     }
-    inProgress[key] = true;
-    function end(url) {
-        setTimeout(function () {
-            delete inProgress[key];
-            res.redirect(url);
-        }, 1000);
+    inProgress[key] <span class="pl-k">=</span> <span class="pl-c1">true</span>;
+    <span class="pl-k">function</span> <span class="pl-en">end</span>(<span class="pl-smi">url</span>) {
+        <span class="pl-c1">setTimeout</span>(<span class="pl-k">function</span> () {
+            <span class="pl-k">delete</span> inProgress[key];
+            <span class="pl-smi">res</span>.<span class="pl-en">redirect</span>(url);
+        }, <span class="pl-c1">1000</span>);
     }
-    validateUser(req.body, function(err, valid) {
-        if(err) {
-            delete inProgress[key];
-            next(err);
-            return;
+    <span class="pl-en">validateUser</span>(<span class="pl-smi">req</span>.<span class="pl-c1">body</span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">valid</span>) {
+        <span class="pl-k">if</span>(err) {
+            <span class="pl-k">delete</span> inProgress[key];
+            <span class="pl-en">next</span>(err);
+            <span class="pl-k">return</span>;
         }
-        if(valid.success) { // Validation success. Create authorized session.
-            req.session.login({userId: valid.userId}, function () {
-                // delay before answer
-                end('/user/' + valid.userId);
+        <span class="pl-k">if</span>(<span class="pl-smi">valid</span>.<span class="pl-smi">success</span>) { <span class="pl-c">// Validation success. Create authorized session.</span>
+            <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">login</span>({userId<span class="pl-k">:</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>}, <span class="pl-k">function</span> () {
+                <span class="pl-c">// delay before answer</span>
+                <span class="pl-en">end</span>(<span class="pl-s"><span class="pl-pds">'</span>/user/<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">valid</span>.<span class="pl-smi">userId</span>);
             });
-        } else {
-            req.session.error = valid.error;
-            // delay before answering
-            end('/');
+        } <span class="pl-k">else</span> {
+            <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">error</span> <span class="pl-k">=</span> <span class="pl-smi">valid</span>.<span class="pl-smi">error</span>;
+            <span class="pl-c">// delay before answering</span>
+            <span class="pl-en">end</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>);
         }
     });
-});
-</code>
+});</pre></div>
 </li>
 <li>If login failed don't say, which field is incorrect</li>
 <li>If you have email-based recovery system, always validate user's email address. Don't let user change it without revalidating.</li>
@@ -291,86 +289,85 @@ app.post('/login', function (req, res, next) {
 <li>
 <p>Use <code>connect-redis</code> for storing sessions</p>
 
-<pre><code>var express = require('express');
-var RedisStore = require('connect-redis')(express); // Require connect-redis
-var session = require('express-session');
-var cookieParser = require('cookie-parser');
-var app = express();
-app.use(cookieParser());
-app.use(session({
-        store: new RedisStore({
-        host: 'localhost',
-        port: 6379,
-        db: 2,
-        pass: 'funky password here' // &lt;- specify password
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> express <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>express<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> RedisStore <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>connect-redis<span class="pl-pds">'</span></span>)(express); <span class="pl-c">// Require connect-redis</span>
+<span class="pl-k">var</span> session <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>express-session<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> cookieParser <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>cookie-parser<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> app <span class="pl-k">=</span> <span class="pl-en">express</span>();
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">cookieParser</span>());
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">session</span>({
+        store<span class="pl-k">:</span> <span class="pl-k">new</span> <span class="pl-en">RedisStore</span>({
+        host<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>localhost<span class="pl-pds">'</span></span>,
+        port<span class="pl-k">:</span> <span class="pl-c1">6379</span>,
+        db<span class="pl-k">:</span> <span class="pl-c1">2</span>,
+        pass<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>funky password here<span class="pl-pds">'</span></span> <span class="pl-c">// &lt;- specify password</span>
     }),
-    secret: 'this is a nice secret',
-    resave: false,
-    saveUninitialized: true
-}));
-</code></pre>
+    secret<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>this is a nice secret<span class="pl-pds">'</span></span>,
+    resave<span class="pl-k">:</span> <span class="pl-c1">false</span>,
+    saveUninitialized<span class="pl-k">:</span> <span class="pl-c1">true</span>
+}));</pre></div>
 </li>
 <li>In <code>express-session</code> use more generic name prop value ( 'id' ) for not to share info about application</li>
-<li>Set session timeout to 5 minutes if it's highly protected applications and no more than twenty minutes for low-risk applications.
-Also you can use two-tier system which gives you full access right after login, but reduce your access after a few minutes
-<code>
-var session = require('express-session');
-var RedisStore = require('connect-redis')(session); // Require connect-redis
-// Extend the Session prototype with some custom functions
-// Add a login function
-session.Session.prototype.login = function login() {
-    // Set a time of login
-    this.session._loggedInAt = Date.now();
+<li>
+<p>Set session timeout to 5 minutes if it's highly protected applications and no more than twenty minutes for low-risk applications.
+Also you can use two-tier system which gives you full access right after login, but reduce your access after a few minutes</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> session <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>express-session<span class="pl-pds">'</span></span>);
+<span class="pl-k">var</span> RedisStore <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>connect-redis<span class="pl-pds">'</span></span>)(session); <span class="pl-c">// Require connect-redis</span>
+<span class="pl-c">// Extend the Session prototype with some custom functions</span>
+<span class="pl-c">// Add a login function</span>
+<span class="pl-smi">session</span>.<span class="pl-smi">Session</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">login</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">login</span>() {
+    <span class="pl-c">// Set a time of login</span>
+    <span class="pl-v">this</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_loggedInAt</span> <span class="pl-k">=</span> <span class="pl-c1">Date</span>.<span class="pl-en">now</span>();
 };
-// Add a function to check the logged in status of the user
-session.Session.prototype.isLoggedIn = function isLoggedIn() {
-    return !!this._loggedInAt;
+<span class="pl-c">// Add a function to check the logged in status of the user</span>
+<span class="pl-smi">session</span>.<span class="pl-smi">Session</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">isLoggedIn</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">isLoggedIn</span>() {
+    <span class="pl-k">return</span> <span class="pl-k">!!</span><span class="pl-v">this</span>.<span class="pl-smi">_loggedInAt</span>;
 };
-// Add a function to check the freshness of the session
-session.Session.prototype.isFresh = function isFresh() {
-    // Return true if logged in less then 3 minutes ago
-    return (this._loggedInAt &amp;&amp; (Date.now() - this._loggedInAt) &lt; (1000 * 60 * 3));
+<span class="pl-c">// Add a function to check the freshness of the session</span>
+<span class="pl-smi">session</span>.<span class="pl-smi">Session</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">isFresh</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">isFresh</span>() {
+    <span class="pl-c">// Return true if logged in less then 3 minutes ago</span>
+    <span class="pl-k">return</span> (<span class="pl-v">this</span>.<span class="pl-smi">_loggedInAt</span> <span class="pl-k">&amp;&amp;</span> (<span class="pl-c1">Date</span>.<span class="pl-en">now</span>() <span class="pl-k">-</span> <span class="pl-v">this</span>.<span class="pl-smi">_loggedInAt</span>) <span class="pl-k">&lt;</span> (<span class="pl-c1">1000</span> <span class="pl-k">*</span> <span class="pl-c1">60</span> <span class="pl-k">*</span> <span class="pl-c1">3</span>));
 };
-app.use(cookieParser());
-app.use(session({
-    store: new RedisStore({ // specify the usage of RedisStore
-        host: 'localhost',
-        port: 6379,
-        db: 2,
-        pass: 'funky password here', //  specify password
-        ttl: (20 * 60) // TTL of 20 minutes represented in seconds
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">cookieParser</span>());
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">session</span>({
+    store<span class="pl-k">:</span> <span class="pl-k">new</span> <span class="pl-en">RedisStore</span>({ <span class="pl-c">// specify the usage of RedisStore</span>
+        host<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>localhost<span class="pl-pds">'</span></span>,
+        port<span class="pl-k">:</span> <span class="pl-c1">6379</span>,
+        db<span class="pl-k">:</span> <span class="pl-c1">2</span>,
+        pass<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>funky password here<span class="pl-pds">'</span></span>, <span class="pl-c">//  specify password</span>
+        ttl<span class="pl-k">:</span> (<span class="pl-c1">20</span> <span class="pl-k">*</span> <span class="pl-c1">60</span>) <span class="pl-c">// TTL of 20 minutes represented in seconds</span>
     }),
-    name: 'id', // use a generic id
-    secret: 'this is a nice secret',
-    resave: false,
-    saveUninitialized: true
+    name<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>id<span class="pl-pds">'</span></span>, <span class="pl-c">// use a generic id</span>
+    secret<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>this is a nice secret<span class="pl-pds">'</span></span>,
+    resave<span class="pl-k">:</span> <span class="pl-c1">false</span>,
+    saveUninitialized<span class="pl-k">:</span> <span class="pl-c1">true</span>
 }));
-app.get('/', function(req, res){
-    if(!req.session.views) {
-        req.session.views = 0;
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">req</span>, <span class="pl-smi">res</span>){
+    <span class="pl-k">if</span>(<span class="pl-k">!</span><span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">views</span>) {
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">views</span> <span class="pl-k">=</span> <span class="pl-c1">0</span>;
     }
-    req.session.views++;
-    res.send('hello world. ' + req.session.views + ' times so far.');
+    <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">views</span><span class="pl-k">++</span>;
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-s"><span class="pl-pds">'</span>hello world. <span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">views</span> <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span> times so far.<span class="pl-pds">'</span></span>);
 });
-app.get('/login', function (req, res) {
-    req.session.login()
-    res.send('ok - ' + req.session._loggedInAt);
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/login<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>) {
+    <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">login</span>()
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-s"><span class="pl-pds">'</span>ok - <span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_loggedInAt</span>);
 });
-app.get('/secure', function (req, res) {
-    if(!req.session.isLoggedIn()) { // Check if user is logged in
-        res.send(401);
-        return;
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/secure<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>) {
+    <span class="pl-k">if</span>(<span class="pl-k">!</span><span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">isLoggedIn</span>()) { <span class="pl-c">// Check if user is logged in</span>
+        <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-c1">401</span>);
+        <span class="pl-k">return</span>;
     }
-    res.send('Access');
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-s"><span class="pl-pds">'</span>Access<span class="pl-pds">'</span></span>);
 });
-app.get('/secure/more', function (req, res) {
-    if(!req.session.isFresh()) { // Check if session is fresh
-        res.send(401);
-        return;
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/secure/more<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>) {
+    <span class="pl-k">if</span>(<span class="pl-k">!</span><span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">isFresh</span>()) { <span class="pl-c">// Check if session is fresh</span>
+        <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-c1">401</span>);
+        <span class="pl-k">return</span>;
     }
-    res.send('You are fresh');
-});
-</code>
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-s"><span class="pl-pds">'</span>You are fresh<span class="pl-pds">'</span></span>);
+});</pre></div>
 </li>
 <li>Use httpOnly setting for every cookie</li>
 <li>If it's possible, limit cookie exposure</li>
@@ -378,7 +375,7 @@ app.get('/secure/more', function (req, res) {
 <code>res.header('Cache-Control', 'no-cache="Set-Cookie, Set-Cookie2"');</code>
 </li>
 <li>Recreate session when the user logs in
-<code>
+<code>javascript
 session.Session.prototype.login = function login(cb) {
     var req = this.req;
     this.regenerate(function (err) {
@@ -395,55 +392,54 @@ session.Session.prototype.login = function login(cb) {
 <li>
 <p>You can bind additional info to session to prevent hijacking</p>
 
-<pre><code>session.Session.prototype.login = function login(cb) {
-    var req = this.req;
-    this.regenerate(function (err) {
-        if(err) {
-            cb(err);
-            return;
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">session</span>.<span class="pl-smi">Session</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">login</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">login</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">var</span> req <span class="pl-k">=</span> <span class="pl-v">this</span>.<span class="pl-smi">req</span>;
+    <span class="pl-v">this</span>.<span class="pl-en">regenerate</span>(<span class="pl-k">function</span> (<span class="pl-smi">err</span>) {
+        <span class="pl-k">if</span>(err) {
+            <span class="pl-en">cb</span>(err);
+            <span class="pl-k">return</span>;
         }
-        req.session._loggedInAt = Date.now();
-        req.session._ip = req.ip;
-        req.session._ua = req.headers['user-agent'];
-        cb();
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_loggedInAt</span> <span class="pl-k">=</span> <span class="pl-c1">Date</span>.<span class="pl-en">now</span>();
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_ip</span> <span class="pl-k">=</span> <span class="pl-smi">req</span>.<span class="pl-smi">ip</span>;
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_ua</span> <span class="pl-k">=</span> <span class="pl-smi">req</span>.<span class="pl-c1">headers</span>[<span class="pl-s"><span class="pl-pds">'</span>user-agent<span class="pl-pds">'</span></span>];
+        <span class="pl-en">cb</span>();
     });
 };
-// Check Session information
-app.use(function (req, res, next) {
-    if(!req.session) { // If there is no session then something is wrong
-        next(new Error('Session object missing'));
-        return;
+<span class="pl-c">// Check Session information</span>
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">if</span>(<span class="pl-k">!</span><span class="pl-smi">req</span>.<span class="pl-smi">session</span>) { <span class="pl-c">// If there is no session then something is wrong</span>
+        <span class="pl-en">next</span>(<span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">'</span>Session object missing<span class="pl-pds">'</span></span>));
+        <span class="pl-k">return</span>;
     }
-    if(req.session.isGuest()) { // If not logged in then continue
-        next();
-        return;
+    <span class="pl-k">if</span>(<span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">isGuest</span>()) { <span class="pl-c">// If not logged in then continue</span>
+        <span class="pl-en">next</span>();
+        <span class="pl-k">return</span>;
     }
-    if(req.session._ip !== req.ip) { // Check ip match
-        // It would be wise to log more information here
-        // to either notify the user or
-        // to try and prevent further attacks
-        console.warn('The request IP did not match session IP');
-        // Generate a new unauthenticated session
-        req.session.regenerate(function () {
-            next();
+    <span class="pl-k">if</span>(<span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_ip</span> <span class="pl-k">!==</span> <span class="pl-smi">req</span>.<span class="pl-smi">ip</span>) { <span class="pl-c">// Check ip match</span>
+        <span class="pl-c">// It would be wise to log more information here</span>
+        <span class="pl-c">// to either notify the user or</span>
+        <span class="pl-c">// to try and prevent further attacks</span>
+        <span class="pl-en">console</span>.<span class="pl-c1">warn</span>(<span class="pl-s"><span class="pl-pds">'</span>The request IP did not match session IP<span class="pl-pds">'</span></span>);
+        <span class="pl-c">// Generate a new unauthenticated session</span>
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">regenerate</span>(<span class="pl-k">function</span> () {
+            <span class="pl-en">next</span>();
         });
-        return;
+        <span class="pl-k">return</span>;
     }
-    if(req.session._ua !== req.headers['user-agent']) { // Check UA validity
-        // It would be wise to log more information here
-        // to either notify the user or
-        // to try and prevent further attacks
-        console.warn('The request User Agent did not match session user agent');
-        // Generate a new unauthenticated session
-        req.session.regenerate(function () {
-            next();
+    <span class="pl-k">if</span>(<span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-smi">_ua</span> <span class="pl-k">!==</span> <span class="pl-smi">req</span>.<span class="pl-c1">headers</span>[<span class="pl-s"><span class="pl-pds">'</span>user-agent<span class="pl-pds">'</span></span>]) { <span class="pl-c">// Check UA validity</span>
+        <span class="pl-c">// It would be wise to log more information here</span>
+        <span class="pl-c">// to either notify the user or</span>
+        <span class="pl-c">// to try and prevent further attacks</span>
+        <span class="pl-en">console</span>.<span class="pl-c1">warn</span>(<span class="pl-s"><span class="pl-pds">'</span>The request User Agent did not match session user agent<span class="pl-pds">'</span></span>);
+        <span class="pl-c">// Generate a new unauthenticated session</span>
+        <span class="pl-smi">req</span>.<span class="pl-smi">session</span>.<span class="pl-en">regenerate</span>(<span class="pl-k">function</span> () {
+            <span class="pl-en">next</span>();
         });
-        return;
+        <span class="pl-k">return</span>;
     }
-    // Everything checks out so continue
-    next();
-});
-</code></pre>
+    <span class="pl-c">// Everything checks out so continue</span>
+    <span class="pl-en">next</span>();
+});</pre></div>
 
 <p>Best module for session management - <code>easy-session</code></p>
 
@@ -507,58 +503,55 @@ If you want to get this data select it and use <code>JSON.parse(jsonText)</code>
 <li>
 <p>To protect app from CSRF attack include csurf method and construct all forms with hidden input and csurfToken inside.</p>
 
-<pre><code>app.use(cookieParser());
-app.use(session({
-        secret: 'this is a nice secret',
-        resave: false,
-        saveUninitialized: true
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">cookieParser</span>());
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">session</span>({
+        secret<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>this is a nice secret<span class="pl-pds">'</span></span>,
+        resave<span class="pl-k">:</span> <span class="pl-c1">false</span>,
+        saveUninitialized<span class="pl-k">:</span> <span class="pl-c1">true</span>
 }));
-app.use(bodyParser.urlencoded());
-app.use(csurf()); // Include csurf middleware
-// Show form
-app.get('/', function (req, res, next) {
-    var form = '&lt;form method="POST" action="/add"&gt;' +
-                    '&lt;input type="hidden" name="_csrf" value="' +
-                    req.csrfToken() + '" /&gt;' + // add hidden token field
-                    '&lt;input type="text" name="name" placeholder="name" /&gt;' +
-                    '&lt;input type="text" name="value" placeholder="value" /&gt;' +
-                    '&lt;input type="submit" value="Submit" /&gt;' +
-                '&lt;/form&gt;';
-    res.send(form);
-});
-</code></pre>
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-smi">bodyParser</span>.<span class="pl-en">urlencoded</span>());
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">csurf</span>()); <span class="pl-c">// Include csurf middleware</span>
+<span class="pl-c">// Show form</span>
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">var</span> form <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>&lt;form method="POST" action="/add"&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="hidden" name="_csrf" value="<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-smi">req</span>.<span class="pl-en">csrfToken</span>() <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-c">// add hidden token field</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="text" name="name" placeholder="name" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="text" name="value" placeholder="value" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="submit" value="Submit" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                <span class="pl-s"><span class="pl-pds">'</span>&lt;/form&gt;<span class="pl-pds">'</span></span>;
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(form);
+});</pre></div>
 
-<pre><code>// error handler
-app.use(function (err, req, res, next) {
-    if (err.code !== 'EBADCSRFTOKEN') {
-        return next(err) // some other error
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// error handler</span>
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">if</span> (<span class="pl-smi">err</span>.<span class="pl-c1">code</span> <span class="pl-k">!==</span> <span class="pl-s"><span class="pl-pds">'</span>EBADCSRFTOKEN<span class="pl-pds">'</span></span>) {
+        <span class="pl-k">return</span> <span class="pl-en">next</span>(err) <span class="pl-c">// some other error</span>
     }
-    // handle CSRF token errors here
-    // Besides just saying that we had a mismatch
-    // we should log some useful information about the request here
-    // like the user and referrer and origin headers of the request for example
-    console.warn('CSRF token mismatch');
-    res.status(403)
-    res.send('form tampered with')
-});
-</code></pre>
+    <span class="pl-c">// handle CSRF token errors here</span>
+    <span class="pl-c">// Besides just saying that we had a mismatch</span>
+    <span class="pl-c">// we should log some useful information about the request here</span>
+    <span class="pl-c">// like the user and referrer and origin headers of the request for example</span>
+    <span class="pl-en">console</span>.<span class="pl-c1">warn</span>(<span class="pl-s"><span class="pl-pds">'</span>CSRF token mismatch<span class="pl-pds">'</span></span>);
+    <span class="pl-smi">res</span>.<span class="pl-c1">status</span>(<span class="pl-c1">403</span>)
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(<span class="pl-s"><span class="pl-pds">'</span>form tampered with<span class="pl-pds">'</span></span>)
+});</pre></div>
 
 <p>Also you can use double-submit cookie with csurfToken</p>
 
-<pre><code>// Include csurf middleware, with cookie option
-app.use(csurf({cookie: true}));
-// Show form
-app.get('/', function (req, res, next) {
-    var form = '&lt;form method="POST" action="/add"&gt;' +
-                    '&lt;input type="hidden" name="_csrf" value="' +
-                    req.csrfToken() + '" /&gt;' + // add hidden token field
-                    '&lt;input type="text" name="name" placeholder="name" /&gt;' +
-                    '&lt;input type="text" name="value" placeholder="value" /&gt;' +
-                    '&lt;input type="submit" value="Submit" /&gt;' +
-                '&lt;/form&gt;';
-    res.send(form);
-});
-</code></pre>
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// Include csurf middleware, with cookie option</span>
+<span class="pl-smi">app</span>.<span class="pl-en">use</span>(<span class="pl-en">csurf</span>({cookie<span class="pl-k">:</span> <span class="pl-c1">true</span>}));
+<span class="pl-c">// Show form</span>
+<span class="pl-smi">app</span>.<span class="pl-en">get</span>(<span class="pl-s"><span class="pl-pds">'</span>/<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">req</span>, <span class="pl-smi">res</span>, <span class="pl-smi">next</span>) {
+    <span class="pl-k">var</span> form <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>&lt;form method="POST" action="/add"&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="hidden" name="_csrf" value="<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-smi">req</span>.<span class="pl-en">csrfToken</span>() <span class="pl-k">+</span> <span class="pl-s"><span class="pl-pds">'</span>" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-c">// add hidden token field</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="text" name="name" placeholder="name" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="text" name="value" placeholder="value" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                    <span class="pl-s"><span class="pl-pds">'</span>&lt;input type="submit" value="Submit" /&gt;<span class="pl-pds">'</span></span> <span class="pl-k">+</span>
+                <span class="pl-s"><span class="pl-pds">'</span>&lt;/form&gt;<span class="pl-pds">'</span></span>;
+    <span class="pl-smi">res</span>.<span class="pl-c1">send</span>(form);
+});</pre></div>
 
 <p>Protect all your forms, not only authentication
 If you want to defeat CSRF attack, then you need to master XSS first</p>
